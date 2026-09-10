@@ -1,1 +1,277 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OTT TV Portal</title>
 
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#080808;
+  color:#fff;
+  font-family:Arial
+}
+header{
+  padding:20px;
+  background:#111;
+  border-bottom:1px solid #333;
+  font-size:22px;
+  font-weight:bold
+}
+main{
+  max-width:1000px;
+  margin:auto;
+  padding:20px
+}
+.card{
+  background:#121212;
+  border:1px solid #292929;
+  border-radius:15px;
+  padding:20px;
+  margin-bottom:20px
+}
+input,button{
+  width:100%;
+  padding:14px;
+  margin:8px 0;
+  border-radius:10px;
+  border:1px solid #444;
+  background:#1b1b1b;
+  color:#fff;
+  font-size:16px
+}
+button{
+  background:#fff;
+  color:#000;
+  font-weight:bold
+}
+.code{
+  font-size:32px;
+  letter-spacing:7px;
+  text-align:center;
+  padding:15px
+}
+.muted{
+  color:#aaa
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:15px
+}
+.item{
+  background:#181818;
+  border-radius:12px;
+  overflow:hidden
+}
+.item img{
+  width:100%;
+  height:230px;
+  object-fit:cover;
+  background:#222
+}
+.info{
+  padding:12px
+}
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr 1fr}
+  .item img{height:180px}
+}
+</style>
+</head>
+
+<body>
+
+<header>🎬 OTT TV Portal</header>
+
+<main>
+
+<section class="card" id="activation">
+  <h2>📺 TV Activation</h2>
+  <p class="muted">Admin Panel से मिला 6-Digit Code यहाँ डालें.</p>
+
+  <input id="code"
+         maxlength="6"
+         inputmode="numeric"
+         placeholder="6-Digit Code">
+
+  <button onclick="activate()">Activate TV</button>
+
+  <div id="msg"></div>
+</section>
+
+<section class="card" id="contentBox" style="display:none">
+  <h2>🎬 Content</h2>
+  <div id="content" class="grid"></div>
+</section>
+
+</main>
+
+<script>
+
+const API='https://ott-tv-portal.onrender.com';
+
+let deviceId=localStorage.tvDeviceId;
+
+if(!deviceId){
+  deviceId='tv-'+crypto.randomUUID();
+  localStorage.tvDeviceId=deviceId;
+}
+
+let token=localStorage.tvToken||'';
+
+async function activate(){
+
+  const code=document.getElementById('code').value.trim();
+
+  if(!/^\d{6}$/.test(code)){
+    msg('6-Digit Code डालें');
+    return;
+  }
+
+  msg('⏳ TV activation check हो रहा है...');
+
+  try{
+
+    const r=await fetch(API+'/tv/activate',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        code:code,
+        device_id:deviceId,
+        name:'TV'
+      })
+    });
+
+    const d=await r.json();
+
+    if(!r.ok){
+      msg('❌ '+(d.detail||'Activation failed'));
+      return;
+    }
+
+    if(d.status==='active'){
+
+      token=d.token;
+      localStorage.tvToken=token;
+
+      msg('✅ TV Activated');
+
+      document.getElementById('activation').style.display='none';
+      document.getElementById('contentBox').style.display='block';
+
+      loadContent();
+
+    }else{
+
+      msg('⏳ Admin approval का इंतज़ार करें...');
+
+      setTimeout(function(){
+        activate();
+      },3000);
+    }
+
+  }catch(e){
+
+    msg('❌ Server connection error');
+
+  }
+}
+
+function msg(text){
+  document.getElementById('msg').innerHTML=
+    '<p>'+text+'</p>';
+}
+
+async function loadContent(){
+
+  try{
+
+    const r=await fetch(API+'/tv/content',{
+      headers:{
+        'Authorization':'Bearer '+token
+      }
+    });
+
+    const data=await r.json();
+
+    if(!r.ok){
+      localStorage.removeItem('tvToken');
+      location.reload();
+      return;
+    }
+
+    if(!data.length){
+      content.innerHTML=
+        '<p class="muted">अभी कोई content available नहीं है.</p>';
+      return;
+    }
+
+    content.innerHTML=data.map(x=>{
+
+      const poster=x.poster_url?
+        x.poster_url:
+        'https://via.placeholder.com/300x450?text=OTT';
+
+      return `
+        <div class="item">
+          <img src="${poster}" alt="">
+          <div class="info">
+            <b>${esc(x.title)}</b>
+            <p class="muted">${esc(x.category||'Featured')}</p>
+            <button onclick="openVideo('${escAttr(x.video_url||'')}')">
+              ▶ Play
+            </button>
+          </div>
+        </div>
+      `;
+
+    }).join('');
+
+  }catch(e){
+
+    content.innerHTML=
+      '<p class="muted">Content load नहीं हुआ.</p>';
+
+  }
+}
+
+function openVideo(url){
+
+  if(!url){
+    alert('Video URL उपलब्ध नहीं है');
+    return;
+  }
+
+  window.open(url,'_blank');
+}
+
+function esc(s){
+  return String(s||'').replace(/[&<>"']/g,function(c){
+    return {
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[c];
+  });
+}
+
+function escAttr(s){
+  return String(s||'').replace(/'/g,"\\'");
+}
+
+if(token){
+  document.getElementById('activation').style.display='none';
+  document.getElementById('contentBox').style.display='block';
+  loadContent();
+}
+
+</script>
+</body>
+  </html>
