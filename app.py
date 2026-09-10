@@ -1,4 +1,4 @@
-
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, UploadFile, File, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -148,3 +148,14 @@ def tv_content(authorization: str | None = Header(default=None)):
         raise HTTPException(401,"TV activation required")
     c=db(); rows=c.execute("SELECT * FROM content ORDER BY category,title").fetchall(); c.close()
     return [dict(r) for r in rows]
+@app.get("/admin", include_in_schema=False)
+def admin_page():
+    return FileResponse(
+        Path(__file__).with_name("admin").joinpath("index.html")
+    )
+
+@app.get("/tv", include_in_schema=False)
+def tv_page():
+    return FileResponse(
+        Path(__file__).with_name("tv").joinpath("index.html")
+    )
