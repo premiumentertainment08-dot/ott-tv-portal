@@ -1,11 +1,1 @@
-<!doctype html>
-<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>OTT TV</title>
-<style>body{margin:0;background:#080808;color:white;font-family:Arial}header{padding:28px;font-size:28px;font-weight:bold}main{padding:20px}.row{display:flex;gap:16px;overflow:auto}.card{min-width:180px;background:#181818;border-radius:8px;overflow:hidden}.card img{width:180px;height:255px;object-fit:cover}.card h3,.card p{padding:0 10px}.login{max-width:500px;margin:80px auto;text-align:center}.login input{font-size:28px;padding:14px;text-align:center;background:#222;color:#fff;border:1px solid #555}.login button{font-size:22px;padding:14px 30px;margin:10px;background:#e50914;color:white;border:0}</style></head>
-<body><header>MY OTT</header><div id="app"></div>
-<script>
-const API=localStorage.api||'http://127.0.0.1:8000';
-function login(){app.innerHTML=`<div class="login"><h1>TV Activation</h1><p>Enter the 6-digit code shown by your TV.</p><input id="code" maxlength="6" inputmode="numeric"><br><button onclick="activate()">Activate TV</button><p id="msg"></p></div>`}
-async function activate(){let r=await fetch(API+'/tv/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code.value,device_id:navigator.userAgent,name:'Smart TV'})});let x=await r.json();msg.textContent=x.message||x.status;if(x.token){localStorage.token=x.token;home()}}
-async function home(){let r=await fetch(API+'/tv/content',{headers:{Authorization:'Bearer '+localStorage.token}});if(!r.ok){localStorage.removeItem('token');return login()}let items=await r.json();app.innerHTML='<main><h1>Home</h1><div class="row">'+items.map(x=>`<div class="card"><img src="${x.poster_url||'https://via.placeholder.com/180x255?text=Poster'}"><h3>${x.title}</h3><p>${x.category}</p></div>`).join('')+'</div></main>'}
-localStorage.token?home():login();
-</script></body></html>
+<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OTT TV Portal</title><style>body{background:#080808;color:#fff;font-family:Arial;text-align:center;padding:50px 20px}a{display:block;max-width:360px;margin:15px auto;padding:16px;background:#fff;color:#000;border-radius:10px;text-decoration:none;font-weight:bold}</style></head><body><h1>🎬 OTT TV Portal</h1><a href="admin/">⚙️ Admin Panel</a><a href="tv/">📺 TV Panel</a></body></html>
