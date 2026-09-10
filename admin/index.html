@@ -271,3 +271,28 @@ dl.innerHTML=
 }
 
 async function toggle(id,a){
+  try{
+  await R('/admin/devices/'+id+'/'+(a?'deactivate':'activate'),{
+    method:'POST',
+    headers:H()
+  });
+  devices();
+}catch(e){
+  alert(e.message);
+}
+}
+
+function E(s){
+  return String(s??'').replace(/[&<>"']/g,function(c){
+    return {
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[c];
+  });
+}
+
+contents();
+devices();
